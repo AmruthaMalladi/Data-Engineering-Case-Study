@@ -1,0 +1,63 @@
+
+{
+    "s3-path": "s3://landing-zone/clicks_data/",
+    "format": "json",
+    "table_schema": "advertisex_data",
+    "PK": ["campaign_id", "user_id"],
+    "schema": [
+        {
+            "name": "campaign_id",
+            "type":"string",
+            "is_nullable": false
+        },
+        {
+            "name": "user_id",
+            "type": "string",
+            "is_nullable": false
+        },
+        {
+            "name": "timestamp",
+            "type": "timestamp",
+            "is_nullable": true 
+        },
+        {
+            "name": "click_counts",
+            "type": "int",
+            "is_nullable": "true"
+        }
+
+    ],
+    "transformations": [
+        {
+            "type": "rename",
+            "sql": "withColumnRenamed(user_id, uid)"
+        },
+        {
+            "type": "de-duplicate",
+            "sql" : "dropDuplicates()"
+        },
+        {
+            "type": "filter",
+            "sql": ".filter(col('clicks_count') > 1)"
+        }
+    ],
+    "Joins": [
+        {
+            "type": "left join",
+            "table_name": "ad_impression",
+            "on": "user_id"
+        }
+    ],
+    "add_columns": [
+        {
+            "col_name": "cdc",
+            "sql": "SELECT *, hash({PK}) AS {col_name} from df_temp"
+        },
+        {
+            "col_name": "effect_from_timestamp",
+            "sql": "select *, current_timestamp() as {col_name} from df_temp"
+        }
+    ],
+    "Load_type": "type-2"
+
+}
